@@ -1,13 +1,22 @@
 # HTML Rendering Tool
 
-Piccola app Streamlit per:
+App Streamlit per:
 
 - caricare un file HTML;
-- salvarlo in locale senza scadenza automatica;
-- ottenere un URL dedicato del tipo `?page=<id>`;
-- visualizzare il rendering della pagina caricata.
+- salvarlo su storage persistente;
+- generare un URL dedicato del tipo `?page=<id>`;
+- visualizzare la pagina renderizzata.
 
-## Avvio
+## Come funziona
+
+L'app supporta due modalita':
+
+- `S3` consigliata per Streamlit Community Cloud: salva gli HTML in un bucket persistente.
+- `locale` utile solo per sviluppo: salva file e metadati nella cartella `data/`.
+
+Se imposti `S3_BUCKET`, l'app usa automaticamente il backend S3-compatible.
+
+## Avvio locale
 
 ```bash
 python3 -m venv .venv
@@ -16,20 +25,29 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## URL condivisibili
+## Deploy su Streamlit Community Cloud
 
-Per generare link pubblici corretti, imposta `PUBLIC_BASE_URL` con l'URL esterno
-dell'applicazione:
+1. Pubblica il progetto su GitHub.
+2. Crea una nuova app su Streamlit Community Cloud.
+3. Nei secrets dell'app configura almeno:
 
-```bash
-export PUBLIC_BASE_URL="https://tuo-dominio-o-tunnel"
-streamlit run app.py
+```toml
+PUBLIC_BASE_URL = "https://tuo-subdomain.streamlit.app"
+S3_BUCKET = "nome-bucket"
+S3_PREFIX = "html-pages"
+AWS_DEFAULT_REGION = "eu-west-1"
+AWS_ACCESS_KEY_ID = "..."
+AWS_SECRET_ACCESS_KEY = "..."
 ```
 
-Se `PUBLIC_BASE_URL` non e' impostata, l'app usa `http://localhost:8501` come base.
+4. Se usi uno storage S3-compatible diverso da AWS, aggiungi anche:
 
-## Note
+```toml
+S3_ENDPOINT_URL = "https://<endpoint-provider>"
+```
 
-- I file HTML vengono memorizzati in `data/uploads/`.
-- I metadati vengono salvati in `data/pages.db`.
-- Nessuna scadenza viene applicata ai contenuti salvati.
+## Note importanti
+
+- Gli URL dedicati restano stabili fintanto che l'oggetto rimane nel bucket.
+- Streamlit Community Cloud mantiene l'URL dell'app, ma l'app puo' andare in sleep per inattivita'.
+- La persistenza "senza scadenza" dipende dalle policy del tuo bucket: non impostare lifecycle rules di cancellazione se vuoi conservarli indefinitamente.
